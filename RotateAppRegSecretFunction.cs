@@ -66,29 +66,25 @@ namespace AppRegSecretRotation
             string appRegistrationObjectId,
             Guid previousClientSecretKeyId)
         {
-            var managedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID");
-            var numberOfDaysUntilExpiry = Environment.GetEnvironmentVariable("NUMBER_OF_DAYS_UNTIL_EXPIRY") ?? "30";
-
-            var defaultCredential = new DefaultAzureCredential();
+            var numberOfDaysUntilExpiry = Environment.GetEnvironmentVariable("NUMBER_OF_DAYS_UNTIL_EXPIRY") ?? "60";
 
             var graphServiceClient = new GraphServiceClient(
-                defaultCredential, new[] { "https://graph.microsoft.com/.default" });
+                new DefaultAzureCredential(), new[] { "https://graph.microsoft.com/.default" });
 
             var passwordCredential = new PasswordCredential
             {
-                DisplayName = "Set via automation",
-                EndDateTime = DateTimeOffset.Now.AddDays(long.Parse(numberOfDaysUntilExpiry))
+                DisplayName = "set-via-automation",
+                EndDateTime = DateTimeOffset.Now.AddDays(int.Parse(numberOfDaysUntilExpiry))
             };
 
             try
             {
-                _logger.LogInformation("Rotating client secret for app registration: " + appRegistrationObjectId);
+                _logger.LogInformation("Rotating client secret for app registration: {AppRegistrationObjectId}", appRegistrationObjectId);
 
-                // call microsoft graph to get ad application by object id
                 var adApplication = await graphServiceClient.Applications[appRegistrationObjectId]
                     .GetAsync();
 
-                _logger.LogInformation("Found app registration: " + adApplication.DisplayName);
+                _logger.LogInformation("Found app registration: {AppRegistrationDisplayName}", adApplication.DisplayName);
 
                 await graphServiceClient.Applications[appRegistrationObjectId]
                     .AddPassword
@@ -97,7 +93,6 @@ namespace AppRegSecretRotation
                         PasswordCredential = passwordCredential
                     });
 
-                // Remove the old client secret
                 await graphServiceClient.Applications[appRegistrationObjectId]
                     .RemovePassword
                     .PostAsync(new RemovePasswordPostRequestBody
@@ -107,9 +102,7 @@ namespace AppRegSecretRotation
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Error rotating client secret for app registration: " + appRegistrationObjectId);
-                _logger.LogError(e.Message);
-                return null;
+                _logger.LogError(e, "Error rotating client secret for app registration: {AppRegistrationObjectId}", appRegistrationObjectId);
             }
 
             return passwordCredential;
