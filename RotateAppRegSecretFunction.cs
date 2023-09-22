@@ -75,7 +75,7 @@ public class RotateAppRegSecretFunction
     {
         try
         {
-            var numberOfDaysUntilExpiry = Environment.GetEnvironmentVariable("NUMBER_OF_DAYS_UNTIL_EXPIRY") ?? "60";
+            var numberOfDaysUntilExpiry = Environment.GetEnvironmentVariable("NUMBER_OF_DAYS_UNTIL_EXPIRY") ?? "31";
 
             var graphServiceClient = new GraphServiceClient(
                 new DefaultAzureCredential(), new[] { "https://graph.microsoft.com/.default" });
